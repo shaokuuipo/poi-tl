@@ -16,43 +16,58 @@
 
 package com.deepoove.poi.render.processor;
 
+import java.util.Objects;
+
 import org.apache.commons.lang3.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.deepoove.poi.XWPFTemplate;
-import com.deepoove.poi.exception.RenderException;
 import com.deepoove.poi.policy.DocxRenderPolicy;
 import com.deepoove.poi.policy.RenderPolicy;
 import com.deepoove.poi.render.compute.RenderDataCompute;
 import com.deepoove.poi.resolver.Resolver;
+import com.deepoove.poi.template.ChartTemplate;
 import com.deepoove.poi.template.ElementTemplate;
+import com.deepoove.poi.template.PictureTemplate;
 import com.deepoove.poi.template.run.RunTemplate;
 
+/**
+ * process element template
+ * 
+ * @author Sayi
+ *
+ */
 public class ElementProcessor extends DefaultTemplateProcessor {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ElementProcessor.class);
+    private static Logger logger = LoggerFactory.getLogger(ElementProcessor.class);
 
     public ElementProcessor(XWPFTemplate template, Resolver resolver, RenderDataCompute renderDataCompute) {
         super(template, resolver, renderDataCompute);
     }
 
     @Override
-    public void visit(RunTemplate runTemplate) {
-        RenderPolicy policy = runTemplate.findPolicy(template.getConfig());
-        if (null == policy) {
-            throw new RenderException(
-                    "Cannot find render policy: [" + ((ElementTemplate) runTemplate).getTagName() + "]");
-        }
-        if (policy instanceof DocxRenderPolicy) {
-            return;
-        } else {
-            LOGGER.info("Start render TemplateName:{}, Sign:{}, policy:{}", runTemplate.getTagName(),
-                    runTemplate.getSign(), ClassUtils.getShortClassName(policy.getClass()));
-            policy.render(((ElementTemplate) runTemplate), renderDataCompute.compute(runTemplate.getTagName()),
-                    template);
-        }
+    public void visit(PictureTemplate pictureTemplate) {
+        visit((ElementTemplate) pictureTemplate);
+    }
 
+    @Override
+    public void visit(ChartTemplate chartTemplate) {
+        visit((ElementTemplate) chartTemplate);
+    }
+
+    @Override
+    public void visit(RunTemplate runTemplate) {
+        visit((ElementTemplate) runTemplate);
+    }
+
+    void visit(ElementTemplate eleTemplate) {
+        RenderPolicy policy = eleTemplate.findPolicy(template.getConfig());
+        Objects.requireNonNull(policy, "Cannot find render policy: [" + eleTemplate.getTagName() + "]");
+        if (policy instanceof DocxRenderPolicy) return;
+        logger.info("Start render Template {}, Sign:{}, policy:{}", eleTemplate, eleTemplate.getSign(),
+                ClassUtils.getShortClassName(policy.getClass()));
+        policy.render(eleTemplate, renderDataCompute.compute(eleTemplate.getTagName()), template);
     }
 
 }

@@ -15,47 +15,39 @@
  */
 package com.deepoove.poi.data;
 
-import com.deepoove.poi.data.style.TableStyle;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.deepoove.poi.data.style.CellStyle;
 
 /**
- * 单元格数据
- * 
  * @author Sayi
- * @version 1.5.0
+ *
  */
-public class CellRenderData {
+public class CellRenderData implements RenderData {
 
-    protected TextRenderData cellText;
+    private static final long serialVersionUID = 1L;
+    private List<ParagraphRenderData> paragraphs = new ArrayList<>();
+    private CellStyle cellStyle;
 
-    /**
-     * 单元格级别的样式：背景色、单元格文字对齐方式
-     */
-    protected TableStyle cellStyle;
-
-    public CellRenderData() {}
-
-    public CellRenderData(TextRenderData renderData) {
-        this.cellText = renderData;
+    public List<ParagraphRenderData> getParagraphs() {
+        return paragraphs;
     }
 
-    public CellRenderData(TextRenderData renderData, TableStyle cellStyle) {
-        this.cellText = renderData;
-        this.cellStyle = cellStyle;
+    public void setParagraphs(List<ParagraphRenderData> paragraphs) {
+        this.paragraphs = paragraphs;
     }
 
-    public TextRenderData getCellText() {
-        return cellText;
+    public CellRenderData addParagraph(ParagraphRenderData para) {
+        this.paragraphs.add(para);
+        return this;
     }
 
-    public void setCellText(TextRenderData renderData) {
-        this.cellText = renderData;
-    }
-
-    public TableStyle getCellStyle() {
+    public CellStyle getCellStyle() {
         return cellStyle;
     }
 
-    public void setCellStyle(TableStyle cellStyle) {
+    public void setCellStyle(CellStyle cellStyle) {
         this.cellStyle = cellStyle;
     }
 

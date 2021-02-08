@@ -15,63 +15,54 @@
  */
 package com.deepoove.poi.data.style;
 
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.STHighlightColor;
+import java.io.Serializable;
+
+import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
+
+import com.deepoove.poi.xwpf.XWPFHighlightColor;
 
 /**
- * 样式
+ * Text Style
  * 
  * @author Sayi
- * @version 0.0.3
  *
  */
-public class Style {
+public class Style implements Serializable {
 
-    /**
-     * 文字颜色
-     */
+    private static final long serialVersionUID = 1L;
+
     private String color;
-    /**
-     * 字体
-     */
     private String fontFamily;
-    /**
-     * 字体大小
-     */
-    private int fontSize;
-    /**
-     * 粗体
-     */
+    private double fontSize;
     private Boolean isBold;
-    /**
-     * 斜体
-     */
     private Boolean isItalic;
-    /**
-     * 删除线
-     */
     private Boolean isStrike;
-    /**
-     * 下划线
-     */
-    private Boolean isUnderLine;
+    private UnderlinePatterns underlinePatterns;
+    private String underlineColor;
+    private XWPFHighlightColor highlightColor;
 
     /**
-     * 文本背景突出显示颜色
-     */
-    private STHighlightColor.Enum highlightColor;
-    
-    /**
-     * 间距，单位pt
+     * point unit(pt)
      */
     private int characterSpacing;
 
-    public Style() {}
+    /**
+     * baseline, superscript, subscript
+     */
+    private String vertAlign;
+
+    public Style() {
+    }
+
+    public static StyleBuilder builder() {
+        return new StyleBuilder();
+    }
 
     public Style(String color) {
         this.color = color;
     }
 
-    public Style(String fontFamily, int fontSize) {
+    public Style(String fontFamily, double fontSize) {
         this.fontFamily = fontFamily;
         this.fontSize = fontSize;
     }
@@ -92,11 +83,11 @@ public class Style {
         this.fontFamily = fontFamily;
     }
 
-    public int getFontSize() {
+    public double getFontSize() {
         return fontSize;
     }
 
-    public void setFontSize(int fontSize) {
+    public void setFontSize(double fontSize) {
         this.fontSize = fontSize;
     }
 
@@ -124,19 +115,27 @@ public class Style {
         this.isStrike = isStrike;
     }
 
-    public Boolean isUnderLine() {
-        return isUnderLine;
+    public UnderlinePatterns getUnderlinePatterns() {
+        return underlinePatterns;
     }
 
-    public void setUnderLine(Boolean isUnderLine) {
-        this.isUnderLine = isUnderLine;
+    public void setUnderlinePatterns(UnderlinePatterns underlinePatterns) {
+        this.underlinePatterns = underlinePatterns;
     }
 
-    public STHighlightColor.Enum getHighlightColor() {
+    public String getUnderlineColor() {
+        return underlineColor;
+    }
+
+    public void setUnderlineColor(String underlineColor) {
+        this.underlineColor = underlineColor;
+    }
+
+    public XWPFHighlightColor getHighlightColor() {
         return highlightColor;
     }
 
-    public void setHighlightColor(STHighlightColor.Enum highlightColor) {
+    public void setHighlightColor(XWPFHighlightColor highlightColor) {
         this.highlightColor = highlightColor;
     }
 
@@ -147,5 +146,77 @@ public class Style {
     public void setCharacterSpacing(int characterSpacing) {
         this.characterSpacing = characterSpacing;
     }
-    
+
+    public String getVertAlign() {
+        return vertAlign;
+    }
+
+    public void setVertAlign(String vertAlign) {
+        this.vertAlign = vertAlign;
+    }
+
+    public static final class StyleBuilder {
+
+        private Style style;
+
+        private StyleBuilder() {
+            style = new Style();
+        }
+
+        public StyleBuilder buildColor(String color) {
+            style.setColor(color);
+            return this;
+        }
+
+        public StyleBuilder buildFontFamily(String fontFamily) {
+            style.setFontFamily(fontFamily);
+            return this;
+        }
+
+        public StyleBuilder buildFontSize(double fontSize) {
+            style.setFontSize(fontSize);
+            return this;
+        }
+
+        public StyleBuilder buildBold() {
+            style.setBold(true);
+            return this;
+        }
+
+        public StyleBuilder buildItalic() {
+            style.setItalic(true);
+            return this;
+        }
+
+        public StyleBuilder buildStrike() {
+            style.setStrike(true);
+            return this;
+        }
+
+        public StyleBuilder buildUnderlineColor(String color) {
+            style.setUnderlineColor(color);
+            return this;
+        }
+
+        public StyleBuilder buildUnderlinePatterns(UnderlinePatterns pattern) {
+            style.setUnderlinePatterns(pattern);
+            return this;
+        }
+
+        public StyleBuilder buildSuper() {
+            style.setVertAlign("superscript");
+            return this;
+        }
+
+        public StyleBuilder buildSub() {
+            style.setVertAlign("subscript");
+            return this;
+        }
+
+        public Style build() {
+            return style;
+        }
+
+    }
+
 }

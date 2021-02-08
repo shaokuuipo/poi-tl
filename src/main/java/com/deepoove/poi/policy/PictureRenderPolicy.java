@@ -15,22 +15,40 @@
  */
 package com.deepoove.poi.policy;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
 import java.io.InputStream;
 
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.util.Units;
+import org.apache.poi.xwpf.usermodel.IBodyElement;
+import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 
 import com.deepoove.poi.data.PictureRenderData;
+import com.deepoove.poi.data.PictureRenderData.PictureAlign;
 import com.deepoove.poi.exception.RenderException;
 import com.deepoove.poi.render.RenderContext;
+import com.deepoove.poi.util.BufferedImageUtils;
+import com.deepoove.poi.util.PageTools;
+import com.deepoove.poi.util.UnitUtils;
+import com.deepoove.poi.xwpf.WidthScalePattern;
 
+/**
+ * picture render
+ * 
+ * @author Sayi
+ *
+ */
 public class PictureRenderPolicy extends AbstractRenderPolicy<PictureRenderData> {
 
     @Override
     protected boolean validate(PictureRenderData data) {
-        return (null != data && (null != data.getData() || null != data.getPath()));
+        if (null == data) return false;
+        if (null == data.getPictureType()) {
+            throw new RenderException("PictureRenderData must set picture type!");
+        }
+        return true;
     }
 
     @Override
@@ -50,40 +68,39 @@ public class PictureRenderPolicy extends AbstractRenderPolicy<PictureRenderData>
     }
 
     public static class Helper {
-        public static final int EMU = 9525;
-
         public static void renderPicture(XWPFRun run, PictureRenderData picture) throws Exception {
-            int suggestFileType = suggestFileType(picture.getPath());
+            if (null == picture.getImage()) {
+                throw new IllegalStateException("Can't get input data from picture!");
+            }
+            PictureAlign align = picture.getAlign();
+            if (null != align && run.getParent() instanceof XWPFParagraph) {
+                ((XWPFParagraph) run.getParent()).setAlignment(ParagraphAlignment.valueOf(align.ordinal() + 1));
+            }
 
-            try (InputStream ins = null == picture.getData()
-                    ? new FileInputStream(picture.getPath())
-                    : new ByteArrayInputStream(picture.getData())) {
-                run.addPicture(ins, suggestFileType, "Generated", picture.getWidth() * EMU,
-                        picture.getHeight() * EMU);
+            int width = picture.getWidth();
+            int height = picture.getHeight();
+            if (!isSetSize(picture)) {
+                BufferedImage original = BufferedImageUtils.readBufferedImage(picture.getImage());
+                width = original.getWidth();
+                height = original.getHeight();
+                if (picture.getScalePattern() == WidthScalePattern.FIT) {
+                    int pageWidth = UnitUtils.twips2Pixel(PageTools.pageWidth((IBodyElement) run.getParent()));
+                    if (width > pageWidth) {
+                        double ratio = pageWidth / (double) width;
+                        width = pageWidth;
+                        height = (int) (height * ratio);
+                    }
+                }
+            }
+            try (InputStream stream = new ByteArrayInputStream(picture.getImage())) {
+                run.addPicture(stream, picture.getPictureType().type(), "Generated", Units.pixelToEMU(width),
+                        Units.pixelToEMU(height));
             }
         }
 
-        public static int suggestFileType(String imgFile) {
-            int format = 0;
-
-            if (imgFile.endsWith(".emf")) format = XWPFDocument.PICTURE_TYPE_EMF;
-            else if (imgFile.endsWith(".wmf")) format = XWPFDocument.PICTURE_TYPE_WMF;
-            else if (imgFile.endsWith(".pict")) format = XWPFDocument.PICTURE_TYPE_PICT;
-            else if (imgFile.endsWith(".jpeg") || imgFile.endsWith(".jpg"))
-                format = XWPFDocument.PICTURE_TYPE_JPEG;
-            else if (imgFile.endsWith(".png")) format = XWPFDocument.PICTURE_TYPE_PNG;
-            else if (imgFile.endsWith(".dib")) format = XWPFDocument.PICTURE_TYPE_DIB;
-            else if (imgFile.endsWith(".gif")) format = XWPFDocument.PICTURE_TYPE_GIF;
-            else if (imgFile.endsWith(".tiff")) format = XWPFDocument.PICTURE_TYPE_TIFF;
-            else if (imgFile.endsWith(".eps")) format = XWPFDocument.PICTURE_TYPE_EPS;
-            else if (imgFile.endsWith(".bmp")) format = XWPFDocument.PICTURE_TYPE_BMP;
-            else if (imgFile.endsWith(".wpg")) format = XWPFDocument.PICTURE_TYPE_WPG;
-            else {
-                throw new RenderException("Unsupported picture: " + imgFile
-                        + ". Expected emf|wmf|pict|jpeg|png|dib|gif|tiff|eps|bmp|wpg");
-            }
-            return format;
+        private static boolean isSetSize(PictureRenderData picture) {
+            return (picture.getWidth() != 0 || picture.getHeight() != 0)
+                    && picture.getScalePattern() == WidthScalePattern.NONE;
         }
-
     }
 }

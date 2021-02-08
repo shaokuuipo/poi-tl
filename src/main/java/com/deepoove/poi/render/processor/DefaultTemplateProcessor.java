@@ -13,39 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.deepoove.poi.render.processor;
-
-import java.util.List;
 
 import com.deepoove.poi.XWPFTemplate;
 import com.deepoove.poi.render.compute.RenderDataCompute;
 import com.deepoove.poi.resolver.Resolver;
+import com.deepoove.poi.template.ChartTemplate;
 import com.deepoove.poi.template.InlineIterableTemplate;
 import com.deepoove.poi.template.IterableTemplate;
 import com.deepoove.poi.template.MetaTemplate;
+import com.deepoove.poi.template.PictureTemplate;
 import com.deepoove.poi.template.run.RunTemplate;
 
 public abstract class DefaultTemplateProcessor implements Visitor {
 
     protected XWPFTemplate template;
     protected final RenderDataCompute renderDataCompute;
-    protected final Resolver resolver;;
+    protected final Resolver resolver;
 
     public DefaultTemplateProcessor(XWPFTemplate template, final Resolver resolver,
             final RenderDataCompute renderDataCompute) {
         this.template = template;
         this.resolver = resolver;
         this.renderDataCompute = renderDataCompute;
-    }
-
-    protected void visitOther(MetaTemplate template) {
-        // no-op
-    }
-
-    public void process(List<MetaTemplate> templates) {
-        // process in order( or sort first)
-        templates.forEach(template -> template.accept(this));
     }
 
     @Override
@@ -59,8 +49,22 @@ public abstract class DefaultTemplateProcessor implements Visitor {
     }
 
     @Override
+    public void visit(PictureTemplate pictureTemplate) {
+        visitOther(pictureTemplate);
+    }
+
+    @Override
+    public void visit(ChartTemplate chartTemplate) {
+        visitOther(chartTemplate);
+    }
+
+    @Override
     public void visit(IterableTemplate iterableTemplate) {
         visitOther(iterableTemplate);
+    }
+
+    protected void visitOther(MetaTemplate template) {
+        // no-op
     }
 
 }

@@ -32,8 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import com.deepoove.poi.config.Configure;
 import com.deepoove.poi.exception.ResolverException;
-import com.deepoove.poi.policy.RenderPolicy;
-import com.deepoove.poi.policy.ref.ReferenceRenderPolicy;
 import com.deepoove.poi.render.DefaultRender;
 import com.deepoove.poi.render.Render;
 import com.deepoove.poi.resolver.Resolver;
@@ -44,33 +42,42 @@ import com.deepoove.poi.util.Preconditions;
 import com.deepoove.poi.xwpf.NiceXWPFDocument;
 
 /**
- * The template of word(docx)
+ * The facade of word(docx) template
+ * 
+ * <p>
+ * It works by expanding tags in a template using values provided in a Map or
+ * Object.
+ * </p>
  * 
  * @author Sayi
- * @version 0.0.1
+ * @since 0.0.1
  */
 public class XWPFTemplate implements Closeable {
     private static Logger logger = LoggerFactory.getLogger(XWPFTemplate.class);
-    private static final String SUPPORT_MINIMUM_VERSION = "4.0.0";
+    private static final String SUPPORT_MINIMUM_VERSION = "4.1.2";
 
     private NiceXWPFDocument doc;
-
     private Configure config;
     private Resolver resolver;
     private Render renderer;
-
     private List<MetaTemplate> eleTemplates;
 
     static {
-        Preconditions.checkMinimumVersion(Version.getVersion(), SUPPORT_MINIMUM_VERSION,
-                (cur, min) -> "Require Apach POI version at least " + min + ", but now is " + cur
-                        + ", please check the dependency of project.");
+        try {
+            Class.forName("org.apache.poi.Version");
+            Preconditions.checkMinimumVersion(Version.getVersion(), SUPPORT_MINIMUM_VERSION,
+                    (cur, min) -> "Require Apache POI version at least " + min + ", but now is " + cur
+                            + ", please check the dependency of project.");
+        } catch (ClassNotFoundException e) {
+            // no-op
+        }
     }
 
-    private XWPFTemplate() {}
+    private XWPFTemplate() {
+    }
 
-    public static XWPFTemplate compile(String filePath) {
-        return compile(new File(filePath));
+    public static XWPFTemplate compile(String path) {
+        return compile(new File(path));
     }
 
     public static XWPFTemplate compile(File file) {
@@ -81,8 +88,8 @@ public class XWPFTemplate implements Closeable {
         return compile(inputStream, Configure.createDefault());
     }
 
-    public static XWPFTemplate compile(String filePath, Configure config) {
-        return compile(new File(filePath), config);
+    public static XWPFTemplate compile(String path, Configure config) {
+        return compile(new File(path), config);
     }
 
     public static XWPFTemplate compile(File file, Configure config) {
@@ -93,14 +100,6 @@ public class XWPFTemplate implements Closeable {
         }
     }
 
-    /**
-     * template file as InputStream
-     * 
-     * @param inputStream
-     * @param config
-     * @return
-     * @version 1.2.0
-     */
     public static XWPFTemplate compile(InputStream inputStream, Configure config) {
         try {
             XWPFTemplate template = new XWPFTemplate();
@@ -121,7 +120,7 @@ public class XWPFTemplate implements Closeable {
     /**
      * Render the template by data model
      * 
-     * @param model
+     * @param model render data
      * @return
      */
     public XWPFTemplate render(Object model) {
@@ -130,12 +129,11 @@ public class XWPFTemplate implements Closeable {
     }
 
     /**
-     * Render the template by data model and write to OutputStream, do'not
-     * forget invoke #{@link XWPFTemplate#close()},
-     * #{@link OutputStream#close()}
+     * Render the template by data model and write to OutputStream, do'not forget
+     * invoke {@link XWPFTemplate#close()}, {@link OutputStream#close()}
      * 
-     * @param model
-     * @param out
+     * @param model render data
+     * @param out   output
      * @return
      * @throws IOException
      */
@@ -146,34 +144,10 @@ public class XWPFTemplate implements Closeable {
     }
 
     /**
-     * bind reference render policy
+     * write to output stream, do'not forget invoke {@link XWPFTemplate#close()},
+     * {@link OutputStream#close()} finally
      * 
-     * @param refPolicy
-     * @return
-     */
-    public XWPFTemplate bindRefPolicy(ReferenceRenderPolicy<?> refPolicy) {
-        this.config.referencePolicy(refPolicy);
-        return this;
-    }
-
-    /**
-     * bind render policy
-     * 
-     * @param tagName
-     * @param policy
-     * @return
-     */
-    public XWPFTemplate bind(String tagName, RenderPolicy policy) {
-        this.config.customPolicy(tagName, policy);
-        return this;
-    }
-
-    /**
-     * write to output stream, do'not forget invoke
-     * #{@link XWPFTemplate#close()}, #{@link OutputStream#close()} finally
-     * 
-     * @param out
-     *            eg.ServletOutputStream
+     * @param out eg.ServletOutputStream
      * @throws IOException
      */
     public void write(OutputStream out) throws IOException {
@@ -181,27 +155,34 @@ public class XWPFTemplate implements Closeable {
     }
 
     /**
-     * write to file
+     * write to and close output stream
      * 
-     * @param path
+     * @param out eg.ServletOutputStream
      * @throws IOException
      */
-    public void writeToFile(String path) throws IOException {
-        FileOutputStream out = null;
+    public void writeAndClose(OutputStream out) throws IOException {
         try {
-            out = new FileOutputStream(path);
             this.write(out);
             out.flush();
-        }
-        finally {
+        } finally {
             PoitlIOUtils.closeQuietlyMulti(this.doc, out);
         }
     }
 
     /**
+     * write to file, this method will close all the stream
+     * 
+     * @param path output path
+     * @throws IOException
+     */
+    public void writeToFile(String path) throws IOException {
+        this.writeAndClose(new FileOutputStream(path));
+    }
+
+    /**
      * reload the template
      * 
-     * @param doc
+     * @param doc load new template document
      */
     public void reload(NiceXWPFDocument doc) {
         PoitlIOUtils.closeLoggerQuietly(this.doc);
@@ -219,6 +200,11 @@ public class XWPFTemplate implements Closeable {
         this.doc.close();
     }
 
+    /**
+     * Get all tags in the document
+     * 
+     * @return
+     */
     public List<MetaTemplate> getElementTemplates() {
         return eleTemplates;
     }
@@ -227,10 +213,20 @@ public class XWPFTemplate implements Closeable {
         return this.doc;
     }
 
+    /**
+     * Get configuration
+     * 
+     * @return
+     */
     public Configure getConfig() {
         return config;
     }
 
+    /**
+     * Get Resolver
+     * 
+     * @return
+     */
     public Resolver getResolver() {
         return resolver;
     }

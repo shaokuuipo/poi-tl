@@ -1,21 +1,22 @@
 package com.deepoove.poi.tl.source;
 
-import com.deepoove.poi.data.MiniTableRenderData;
-import com.deepoove.poi.data.NumbericRenderData;
+import com.deepoove.poi.data.NumberingRenderData;
 import com.deepoove.poi.data.PictureRenderData;
-import com.deepoove.poi.el.Name;
+import com.deepoove.poi.data.TableRenderData;
+import com.deepoove.poi.data.TextRenderData;
+import com.deepoove.poi.expression.Name;
 
 public class MyDataModel extends DataSourceBaseTest {
 
     private String word;
     private String time;
     private String what;
-    private NumbericRenderData feature;
+    private NumberingRenderData feature;
     @Name("solution_compare")
-    private MiniTableRenderData solutionCompare;
+    private TableRenderData solutionCompare;
     private PictureRenderData portrait;
     private String author;
-    private String introduce;
+    private TextRenderData introduce;
     private String header;
 
     public void setWhat(String what) {
@@ -26,19 +27,19 @@ public class MyDataModel extends DataSourceBaseTest {
         return this.what;
     }
 
-    public void setFeature(NumbericRenderData feature) {
+    public void setFeature(NumberingRenderData feature) {
         this.feature = feature;
     }
 
-    public NumbericRenderData getFeature() {
+    public NumberingRenderData getFeature() {
         return this.feature;
     }
 
-    public MiniTableRenderData getSolutionCompare() {
+    public TableRenderData getSolutionCompare() {
         return solutionCompare;
     }
 
-    public void setSolutionCompare(MiniTableRenderData solutionCompare) {
+    public void setSolutionCompare(TableRenderData solutionCompare) {
         this.solutionCompare = solutionCompare;
     }
 
@@ -58,12 +59,12 @@ public class MyDataModel extends DataSourceBaseTest {
         return this.author;
     }
 
-    public void setIntroduce(String introduce) {
-        this.introduce = introduce;
+    public TextRenderData getIntroduce() {
+        return introduce;
     }
 
-    public String getIntroduce() {
-        return this.introduce;
+    public void setIntroduce(TextRenderData introduce) {
+        this.introduce = introduce;
     }
 
     public void setHeader(String header) {

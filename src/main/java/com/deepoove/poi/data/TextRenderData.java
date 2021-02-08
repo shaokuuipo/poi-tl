@@ -15,32 +15,34 @@
  */
 package com.deepoove.poi.data;
 
-import com.deepoove.poi.data.builder.StyleBuilder;
 import com.deepoove.poi.data.style.Style;
 
 /**
- * 文本数据
+ * Basic text template
  * 
  * @author Sayi
- * @version 0.0.3
  *
  */
 public class TextRenderData implements RenderData {
+
+    private static final long serialVersionUID = 1L;
+
     protected Style style;
 
     /**
-     * \n 表示换行
+     * \n means line break
      */
     protected String text;
 
-    public TextRenderData() {}
+    public TextRenderData() {
+    }
 
     public TextRenderData(String text) {
         this.text = text;
     }
 
     public TextRenderData(String color, String text) {
-        this.style = StyleBuilder.newBuilder().buildColor(color).build();
+        this.style = Style.builder().buildColor(color).build();
         this.text = text;
     }
 
@@ -64,7 +66,7 @@ public class TextRenderData implements RenderData {
     public void setText(String text) {
         this.text = text;
     }
-    
+
     @Override
     public String toString() {
         return text;

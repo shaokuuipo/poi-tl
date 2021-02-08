@@ -32,7 +32,7 @@ public class Issue329 {
 
         dataList = new ArrayList<DataTest>();
 
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 2; i++) {
             dataList.add(data1);
         }
     }
@@ -54,10 +54,10 @@ public class Issue329 {
         // Zip Bomb detected
         ZipSecureFile.setMinInflateRatio(-1.0d);
 
-        XWPFTemplate template = XWPFTemplate.compile("src/test/resources/template/render_include.docx")
+        XWPFTemplate.compile("src/test/resources/template/render_include.docx")
                 .render(datas);
 
-        template.writeToFile("out_issue_329.docx");
+        // template.writeToFile("out_issue_329.docx");
 
         //System.out.println("game over................");
 

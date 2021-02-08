@@ -15,31 +15,66 @@
  */
 package com.deepoove.poi.render.compute;
 
+import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.Map;
+
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 /**
- * 基于Spring Expression Language的计算
+ * Spring expression language compute
  * 
  * @author Sayi
  * @since 1.5.0
  */
 public class SpELRenderDataCompute implements RenderDataCompute {
 
-    ExpressionParser parser;
-    EvaluationContext context;
+    private final ExpressionParser parser;
+    private final EvaluationContext context;
+    private EvaluationContext envContext;
+    private boolean isStrict;
 
-    public SpELRenderDataCompute(Object root) {
-        parser = new SpelExpressionParser();
-        context = new StandardEvaluationContext(root);
+    public SpELRenderDataCompute(EnvModel model) {
+        this(model, true);
+    }
+
+    public SpELRenderDataCompute(EnvModel model, boolean isStrict) {
+        this(model, isStrict, Collections.emptyMap());
+    }
+
+    public SpELRenderDataCompute(EnvModel model, boolean isStrict, Map<String, Method> spELFunction) {
+        this.isStrict = isStrict;
+        this.parser = new SpelExpressionParser();
+        if (null != model.getEnv() && !model.getEnv().isEmpty()) {
+            this.envContext = new StandardEvaluationContext(model.getEnv());
+            ((StandardEvaluationContext) envContext).addPropertyAccessor(new ReadMapAccessor());
+        }
+        this.context = new StandardEvaluationContext(model.getRoot());
+        ((StandardEvaluationContext) context).addPropertyAccessor(new ReadMapAccessor());
+        spELFunction.forEach(((StandardEvaluationContext) context)::registerFunction);
     }
 
     @Override
     public Object compute(String el) {
-        // mark: 无法计算或者读取表达式，会直接抛异常
-        return parser.parseExpression(el).getValue(context);
+        try {
+            if (null != envContext && !el.contains("#this")) {
+                try {
+                    Object val = parser.parseExpression(el).getValue(envContext);
+                    if (null != val) {
+                        return val;
+                    }
+                } catch (Exception e) {
+                    // ignore
+                }
+            }
+            return parser.parseExpression(el).getValue(context);
+        } catch (Exception e) {
+            if (isStrict) throw e;
+            return null;
+        }
     }
 
 }

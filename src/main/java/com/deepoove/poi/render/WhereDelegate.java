@@ -19,21 +19,23 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.util.Units;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 
-import com.deepoove.poi.data.MiniTableRenderData;
-import com.deepoove.poi.data.NumbericRenderData;
+import com.deepoove.poi.data.NumberingRenderData;
 import com.deepoove.poi.data.PictureRenderData;
-import com.deepoove.poi.policy.MiniTableRenderPolicy;
-import com.deepoove.poi.policy.NumbericRenderPolicy;
+import com.deepoove.poi.data.TableRenderData;
+import com.deepoove.poi.policy.NumberingRenderPolicy;
 import com.deepoove.poi.policy.PictureRenderPolicy;
+import com.deepoove.poi.policy.TableRenderPolicy;
 import com.deepoove.poi.policy.TextRenderPolicy;
 
 /**
- * 对当前位置的委托，提供更多操作当前位置的方法。
+ * The delegation of the current location provides more methods of operating the
+ * current location.
  * 
  * @author Sayi
- * @version 1.5.1
+ * @since 1.5.1
  */
 public class WhereDelegate {
 
@@ -51,22 +53,21 @@ public class WhereDelegate {
         TextRenderPolicy.Helper.renderTextRun(run, data);
     }
 
-    public void renderNumberic(NumbericRenderData data) throws Exception {
-        NumbericRenderPolicy.Helper.renderNumberic(run, data);
+    public void renderNumbering(NumberingRenderData data) throws Exception {
+        NumberingRenderPolicy.Helper.renderNumbering(run, data);
     }
 
     public void renderPicture(PictureRenderData data) throws Exception {
         PictureRenderPolicy.Helper.renderPicture(run, data);
     }
 
-    public void renderMiniTable(MiniTableRenderData data) {
-        MiniTableRenderPolicy.Helper.renderMiniTable(run, data);
+    public void renderTable(TableRenderData data) throws Exception {
+        TableRenderPolicy.Helper.renderTable(run, data);
     }
 
     public void addPicture(InputStream inputStream, int type, int width, int height)
             throws InvalidFormatException, IOException {
-        run.addPicture(inputStream, type, "Generated", width * PictureRenderPolicy.Helper.EMU,
-                height * PictureRenderPolicy.Helper.EMU);
+        run.addPicture(inputStream, type, "Generated", Units.pixelToEMU(width), Units.pixelToEMU(height));
     }
 
 }

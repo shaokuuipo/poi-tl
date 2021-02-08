@@ -15,40 +15,167 @@
  */
 package com.deepoove.poi.data.style;
 
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.STJc;
+import java.io.Serializable;
 
-/**
- * 表格样式
- * 
- * @author Sayi
- *
- */
-public class TableStyle {
+import org.apache.poi.xwpf.usermodel.TableRowAlign;
+
+import com.deepoove.poi.util.UnitUtils;
+import com.deepoove.poi.xwpf.WidthScalePattern;
+
+public class TableStyle implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    private TableRowAlign align;
+
+    private BorderStyle leftBorder;
+    private BorderStyle rightBorder;
+    private BorderStyle topBorder;
+    private BorderStyle bottomBorder;
+    private BorderStyle insideHBorder;
+    private BorderStyle insideVBorder;
+
+    private int leftCellMargin;
+    private int topCellMargin;
+    private int rightCellMargin;
+    private int bottomCellMargin;
 
     /**
-     * 背景色
+     * auto, xx% or xx in twips
+     * 
+     * @see #{@link UnitUtils#cm2Twips()}
      */
-    private String backgroundColor;
+    private String width;
 
     /**
-     * 对齐方式 STJc.LEFT 左对齐 STJc.CENTER 居中对齐 STJc.RIGHT 右对齐
+     * fit table width to current document page or not
      */
-    private STJc.Enum align;
+    private WidthScalePattern widthScalePattern = WidthScalePattern.NONE;
 
-    public String getBackgroundColor() {
-        return backgroundColor;
-    }
+    /**
+     * in twips for none pattern or percent for fit
+     * 
+     * @see #{@link UnitUtils#cm2Twips()}
+     */
+    private int[] colWidths;
 
-    public void setBackgroundColor(String backgroundColor) {
-        this.backgroundColor = backgroundColor;
-    }
-
-    public STJc.Enum getAlign() {
+    public TableRowAlign getAlign() {
         return align;
     }
 
-    public void setAlign(STJc.Enum align) {
+    public void setAlign(TableRowAlign align) {
         this.align = align;
+    }
+
+    public BorderStyle getLeftBorder() {
+        return leftBorder;
+    }
+
+    public void setLeftBorder(BorderStyle leftBorder) {
+        this.leftBorder = leftBorder;
+    }
+
+    public BorderStyle getRightBorder() {
+        return rightBorder;
+    }
+
+    public void setRightBorder(BorderStyle rightBorder) {
+        this.rightBorder = rightBorder;
+    }
+
+    public BorderStyle getTopBorder() {
+        return topBorder;
+    }
+
+    public void setTopBorder(BorderStyle topBorder) {
+        this.topBorder = topBorder;
+    }
+
+    public BorderStyle getBottomBorder() {
+        return bottomBorder;
+    }
+
+    public void setBottomBorder(BorderStyle bottomBorder) {
+        this.bottomBorder = bottomBorder;
+    }
+
+    public BorderStyle getInsideHBorder() {
+        return insideHBorder;
+    }
+
+    public void setInsideHBorder(BorderStyle insideHBorder) {
+        this.insideHBorder = insideHBorder;
+    }
+
+    public BorderStyle getInsideVBorder() {
+        return insideVBorder;
+    }
+
+    public void setInsideVBorder(BorderStyle insideVBorder) {
+        this.insideVBorder = insideVBorder;
+    }
+
+    public String getWidth() {
+        return width;
+    }
+
+    /**
+     * @param width auto, xx% or xx in twips
+     */
+    public void setWidth(String width) {
+        this.width = width;
+    }
+
+    public int[] getColWidths() {
+        return colWidths;
+    }
+
+    /**
+     * @param colWidths in twips #{@link UnitUtils#cm2Twips()}
+     */
+    public void setColWidths(int[] colWidths) {
+        this.colWidths = colWidths;
+    }
+
+    public WidthScalePattern getWidthScalePattern() {
+        return widthScalePattern;
+    }
+
+    public void setWidthScalePattern(WidthScalePattern widthScalePattern) {
+
+        this.widthScalePattern = widthScalePattern;
+    }
+
+    public int getLeftCellMargin() {
+        return leftCellMargin;
+    }
+
+    public void setLeftCellMargin(int leftCellMargin) {
+        this.leftCellMargin = leftCellMargin;
+    }
+
+    public int getTopCellMargin() {
+        return topCellMargin;
+    }
+
+    public void setTopCellMargin(int topCellMargin) {
+        this.topCellMargin = topCellMargin;
+    }
+
+    public int getRightCellMargin() {
+        return rightCellMargin;
+    }
+
+    public void setRightCellMargin(int rightCellMargin) {
+        this.rightCellMargin = rightCellMargin;
+    }
+
+    public int getBottomCellMargin() {
+        return bottomCellMargin;
+    }
+
+    public void setBottomCellMargin(int bottomCellMargin) {
+        this.bottomCellMargin = bottomCellMargin;
     }
 
 }

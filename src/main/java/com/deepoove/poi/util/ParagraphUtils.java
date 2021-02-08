@@ -16,12 +16,19 @@
 
 package com.deepoove.poi.util;
 
+import java.util.List;
+
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
 
 public final class ParagraphUtils {
 
     public static String trimLine(XWPFParagraph paragraph) {
-        String value = paragraph.getText();
+        return trimLine(paragraph.getText());
+    }
+
+    public static String trimLine(String value) {
         int len = value.length();
         int st = 0;
         char[] val = value.toCharArray();
@@ -33,6 +40,25 @@ public final class ParagraphUtils {
             len--;
         }
         return (st > 0 || len < value.length()) ? value.substring(st, len) : value;
+    }
+
+    public static Integer getRunPos(XWPFRun run) {
+        XWPFParagraph paragraph = (XWPFParagraph) run.getParent();
+        List<XWPFRun> runs = paragraph.getRuns();
+        for (int i = 0; i < runs.size(); i++) {
+            if (run == runs.get(i)) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    public static boolean havePictures(XWPFParagraph paragraph) {
+        List<XWPFRun> runs = paragraph.getRuns();
+        for (XWPFRun run : runs) {
+            if (CollectionUtils.isNotEmpty(run.getEmbeddedPictures())) return true;
+        }
+        return false;
     }
 
 }

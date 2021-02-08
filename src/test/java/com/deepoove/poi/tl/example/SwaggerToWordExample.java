@@ -15,10 +15,9 @@ import org.junit.jupiter.api.Test;
 
 import com.deepoove.poi.XWPFTemplate;
 import com.deepoove.poi.config.Configure;
-import com.deepoove.poi.config.Configure.ELMode;
-import com.deepoove.poi.data.HyperLinkTextRenderData;
+import com.deepoove.poi.data.BookmarkTextRenderData;
+import com.deepoove.poi.data.HyperlinkTextRenderData;
 import com.deepoove.poi.data.TextRenderData;
-import com.deepoove.poi.policy.BookmarkRenderPolicy;
 import com.deepoove.poi.policy.HackLoopTableRenderPolicy;
 import com.deepoove.poi.tl.policy.JSONRenderPolicy;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -64,9 +63,9 @@ public class SwaggerToWordExample {
         SwaggerView viewData = convert(swagger);
 
         HackLoopTableRenderPolicy hackLoopTableRenderPolicy = new HackLoopTableRenderPolicy();
-        Configure config = Configure.newBuilder().bind("parameters", hackLoopTableRenderPolicy)
+        Configure config = Configure.builder().bind("parameters", hackLoopTableRenderPolicy)
                 .bind("responses", hackLoopTableRenderPolicy).bind("properties", hackLoopTableRenderPolicy)
-                .addPlugin('>', new BookmarkRenderPolicy()).setElMode(ELMode.SPEL_MODE).build();
+                .useSpringEL().build();
         XWPFTemplate template = XWPFTemplate.compile("src/test/resources/swagger/swagger.docx", config)
                 .render(viewData);
         template.writeToFile("out_example_swagger.docx");
@@ -188,7 +187,7 @@ public class SwaggerToWordExample {
             List<Definition> definitions = new ArrayList<>();
             swagger.getDefinitions().forEach((name, model) -> {
                 Definition definition = new Definition();
-                definition.setName(name);
+                definition.setName(new BookmarkTextRenderData(name, name));
                 if (null != model.getProperties()) {
                     List<com.deepoove.poi.tl.example.Property> properties = new ArrayList<>();
                     model.getProperties().forEach((key, prop) -> {
@@ -261,7 +260,7 @@ public class SwaggerToWordExample {
             // if ref
             if (schemaModel instanceof RefModel) {
                 String ref = ((RefModel) schemaModel).get$ref().substring("#/definitions/".length());
-                schema.add(new HyperLinkTextRenderData(ref, "anchor:" + ref));
+                schema.add(new HyperlinkTextRenderData(ref, "anchor:" + ref));
             } else if (schemaModel instanceof ModelImpl) {
                 schema.add(new TextRenderData(((ModelImpl) schemaModel).getType()));
             }
@@ -274,7 +273,7 @@ public class SwaggerToWordExample {
         if (null != items) {
             if (items instanceof RefProperty) {
                 String ref = ((RefProperty) items).get$ref().substring("#/definitions/".length());
-                schema.add(new HyperLinkTextRenderData(ref, "anchor:" + ref));
+                schema.add(new HyperlinkTextRenderData(ref, "anchor:" + ref));
             } else if (items instanceof ArrayProperty) {
                 Property insideItems = ((ArrayProperty) items).getItems();
                 schema.add(new TextRenderData("<"));

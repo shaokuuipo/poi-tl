@@ -25,50 +25,26 @@ import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.apache.xmlbeans.XmlCursor;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTBody;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTP;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTPPr;
 
 public class DocumentBodyContainer implements BodyContainer {
 
-    NiceXWPFDocument doc;
+    private NiceXWPFDocument doc;
 
     public DocumentBodyContainer(NiceXWPFDocument doc) {
         this.doc = doc;
     }
 
     @Override
-    public int getPosOfParagraphCTP(CTP startCtp) {
-        return doc.getPosOfParagraphCTP(startCtp);
-    }
-
-    @Override
     public void removeBodyElement(int i) {
         doc.removeBodyElement(i);
-
     }
 
     @Override
-    public int getPosOfParagraph(XWPFParagraph startParagraph) {
-        return doc.getPosOfParagraph(startParagraph);
-    }
-
-    @Override
-    public List<IBodyElement> getBodyElements() {
-        return doc.getBodyElements();
-    }
-
-    @Override
-    public XWPFParagraph insertNewParagraph(XmlCursor insertPostionCursor) {
-        return doc.insertNewParagraph(insertPostionCursor);
-    }
-
-    @Override
-    public int getParaPos(XWPFParagraph insertNewParagraph) {
-        return doc.getParaPos(insertNewParagraph);
-    }
-
-    @Override
-    public void setParagraph(XWPFParagraph iBodyElement, int paraPos) {
-        doc.setParagraph(iBodyElement, paraPos);
+    public void setParagraph(XWPFParagraph para, int paraPos) {
+        doc.setParagraph(para, paraPos);
     }
 
     @Override
@@ -77,23 +53,8 @@ public class DocumentBodyContainer implements BodyContainer {
     }
 
     @Override
-    public XWPFTable insertNewTbl(XmlCursor insertPostionCursor) {
-        return doc.insertNewTbl(insertPostionCursor);
-    }
-
-    @Override
-    public int getTablePos(XWPFTable insertNewTbl) {
-        return doc.getTablePos(insertNewTbl);
-    }
-
-    @Override
-    public void setTable(int tablePos, XWPFTable iBodyElement) {
-       doc.setTable(tablePos, iBodyElement);
-    }
-
-    @Override
-    public void updateBodyElements(IBodyElement insertNewTbl, IBodyElement copy) {
-        doc.updateBodyElements(insertNewTbl, copy);
+    public void setTable(int tablePos, XWPFTable table) {
+        doc.setTable(tablePos, table);
     }
 
     @Override
@@ -109,6 +70,34 @@ public class DocumentBodyContainer implements BodyContainer {
             }
         }
         return table;
+    }
+
+    @Override
+    public XWPFSection closelySectPr(IBodyElement element) {
+        List<IBodyElement> bodyElements = doc.getBodyElements();
+        boolean isEncounter = false;
+        for (IBodyElement ele : bodyElements) {
+            if (isEncounter) {
+                if (ele instanceof XWPFParagraph) {
+                    XWPFParagraph para = (XWPFParagraph) ele;
+                    CTP ctp = para.getCTP();
+                    if (!ctp.isSetPPr()) continue;
+                    CTPPr pPr = ctp.getPPr();
+                    if (pPr.isSetSectPr()) {
+                        return new XWPFSection(pPr.getSectPr());
+                    }
+                }
+            } else {
+                if (ele == element) {
+                    isEncounter = true;
+                }
+            }
+        }
+        CTBody body = doc.getDocument().getBody();
+        if (body.isSetSectPr()) {
+            return new XWPFSection(body.getSectPr());
+        }
+        return null;
     }
 
 }

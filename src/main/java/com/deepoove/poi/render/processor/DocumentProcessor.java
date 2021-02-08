@@ -13,27 +13,70 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.deepoove.poi.render.processor;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 
 import com.deepoove.poi.XWPFTemplate;
 import com.deepoove.poi.render.compute.RenderDataCompute;
 import com.deepoove.poi.resolver.Resolver;
+import com.deepoove.poi.template.BlockTemplate;
+import com.deepoove.poi.template.ChartTemplate;
 import com.deepoove.poi.template.InlineIterableTemplate;
 import com.deepoove.poi.template.IterableTemplate;
+import com.deepoove.poi.template.MetaTemplate;
+import com.deepoove.poi.template.PictureTemplate;
 import com.deepoove.poi.template.run.RunTemplate;
+import com.deepoove.poi.xwpf.XWPFTextboxContent;
 
-public class DocumentProcessor extends DefaultTemplateProcessor {
+/**
+ * Process all templates of the document
+ * 
+ * @author Sayi
+ *
+ */
+public class DocumentProcessor implements Visitor {
 
     private ElementProcessor elementProcessor;
     private IterableProcessor iterableProcessor;
     private InlineIterableProcessor inlineIterableProcessor;
 
-    public DocumentProcessor(XWPFTemplate template, final Resolver resolver, final RenderDataCompute renderDataCompute) {
-        super(template, resolver, renderDataCompute);
+    public DocumentProcessor(XWPFTemplate template, final Resolver resolver,
+            final RenderDataCompute renderDataCompute) {
         elementProcessor = new ElementProcessor(template, resolver, renderDataCompute);
         iterableProcessor = new IterableProcessor(template, resolver, renderDataCompute);
         inlineIterableProcessor = new InlineIterableProcessor(template, resolver, renderDataCompute);
+    }
+
+    public void process(List<MetaTemplate> templates) {
+        // process in order( or sort first)
+        templates.forEach(template -> template.accept(this));
+        Set<XWPFTextboxContent> textboxs = obtainTextboxes(templates);
+        textboxs.forEach(content -> {
+            content.getXmlObject().set(content.getCTTxbxContent());
+        });
+    }
+
+    @SuppressWarnings("deprecation")
+    private Set<XWPFTextboxContent> obtainTextboxes(List<MetaTemplate> templates) {
+        Set<XWPFTextboxContent> textboxs = new HashSet<>();
+        if (CollectionUtils.isEmpty(templates)) return textboxs;
+        templates.forEach(template -> {
+            RunTemplate checkTemplate = template instanceof RunTemplate ? (RunTemplate) template
+                    : (template instanceof BlockTemplate ? ((BlockTemplate) template).getStartMark() : null);
+            if (null != checkTemplate) {
+                if (checkTemplate.getRun().getParent() instanceof XWPFParagraph
+                        && checkTemplate.getRun().getParagraph().getBody() instanceof XWPFTextboxContent) {
+                    textboxs.add((XWPFTextboxContent) checkTemplate.getRun().getParagraph().getBody());
+                }
+            }
+        });
+        return textboxs;
     }
 
     @Override
@@ -49,6 +92,16 @@ public class DocumentProcessor extends DefaultTemplateProcessor {
     @Override
     public void visit(RunTemplate runTemplate) {
         runTemplate.accept(elementProcessor);
+    }
+
+    @Override
+    public void visit(PictureTemplate pictureTemplate) {
+        pictureTemplate.accept(elementProcessor);
+    }
+
+    @Override
+    public void visit(ChartTemplate chartTemplate) {
+        chartTemplate.accept(elementProcessor);
     }
 
 }

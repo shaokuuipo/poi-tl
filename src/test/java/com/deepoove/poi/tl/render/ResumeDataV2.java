@@ -2,16 +2,10 @@ package com.deepoove.poi.tl.render;
 
 import java.util.List;
 
-import com.deepoove.poi.data.NumbericRenderData;
+import com.deepoove.poi.data.NumberingRenderData;
 import com.deepoove.poi.data.PictureRenderData;
 import com.deepoove.poi.tl.example.ExperienceData;
 
-/**
- * 代码由CodeGenUtils生成
- * 
- * @author Sayi
- * @version
- */
 public class ResumeDataV2 {
 
     private PictureRenderData portrait;
@@ -28,7 +22,7 @@ public class ResumeDataV2 {
     private String rank;
     private String education;
     private String profession;
-    private NumbericRenderData stack;
+    private NumberingRenderData stack;
     private String hobbies;
     private List<ExperienceData> experiences;
 
@@ -144,11 +138,11 @@ public class ResumeDataV2 {
         return this.profession;
     }
 
-    public void setStack(NumbericRenderData stack) {
+    public void setStack(NumberingRenderData stack) {
         this.stack = stack;
     }
 
-    public NumbericRenderData getStack() {
+    public NumberingRenderData getStack() {
         return this.stack;
     }
 

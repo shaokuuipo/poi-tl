@@ -1,5 +1,8 @@
 package com.deepoove.poi.tl.config;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
@@ -15,11 +18,11 @@ import org.junit.jupiter.api.Test;
 
 import com.deepoove.poi.XWPFTemplate;
 import com.deepoove.poi.config.Configure;
-import com.deepoove.poi.data.MiniTableRenderData;
-import com.deepoove.poi.data.NumbericRenderData;
+import com.deepoove.poi.data.Numberings;
 import com.deepoove.poi.policy.AbstractRenderPolicy;
 import com.deepoove.poi.render.RenderContext;
 import com.deepoove.poi.render.WhereDelegate;
+import com.deepoove.poi.tl.source.XWPFTestSupport;
 import com.deepoove.poi.util.TableTools;
 import com.deepoove.poi.xwpf.BodyContainer;
 import com.deepoove.poi.xwpf.BodyContainerFactory;
@@ -31,7 +34,7 @@ public class WritePluginTest {
     public void testPoitlSea() throws IOException {
 
         // where绑定policy
-        Configure config = Configure.newBuilder().bind("sea", new AbstractRenderPolicy<String>() {
+        Configure config = Configure.builder().bind("sea", new AbstractRenderPolicy<String>() {
             @Override
             public void doRender(RenderContext<String> context) throws Exception {
                 // anywhere
@@ -67,7 +70,7 @@ public class WritePluginTest {
                 // anything
                 List<String> thing = context.getThing();
                 // do 列表
-                where.renderNumberic(NumbericRenderData.build(thing.toArray(new String[] {})));
+                where.renderNumbering(Numberings.of(thing.toArray(new String[] {})).create());
                 // clear
                 clearPlaceholder(context, true);
             }
@@ -84,7 +87,7 @@ public class WritePluginTest {
                 int row = thing.size() + 1, col = 2;
                 BodyContainer bodyContainer = BodyContainerFactory.getBodyContainer(where);
                 XWPFTable table = bodyContainer.insertNewTable(where, row, col);
-                TableTools.widthTable(table, MiniTableRenderData.WIDTH_A4_FULL, col);
+                TableTools.widthTable(table, 14.65f, col);
                 TableTools.borderTable(table, 4);
 
                 table.getRow(0).getCell(0).setText("编号");
@@ -107,8 +110,20 @@ public class WritePluginTest {
         args.put("sea_feature", Arrays.asList("面朝大海春暖花开", "今朝有酒今朝醉"));
         args.put("sea_location", Arrays.asList("日落：日落山花红四海", "花海：你想要的都在这里"));
 
-        XWPFTemplate.compile("src/test/resources/template/config_sea.docx", config).render(args)
-                .writeToFile("out_config_sea.docx");
+        XWPFTemplate template = XWPFTemplate.compile("src/test/resources/template/config_sea.docx", config)
+                .render(args);
+
+        XWPFDocument document = XWPFTestSupport.readNewDocument(template);
+        assertEquals(args.get("sea"), document.getParagraphArray(0).getText());
+        assertEquals(1, document.getAllPictures().size());
+        assertEquals("面朝大海春暖花开", document.getParagraphArray(2).getText());
+        assertTrue(null != document.getParagraphArray(2).getNumID());
+        assertEquals("今朝有酒今朝醉", document.getParagraphArray(3).getText());
+        assertTrue(null != document.getParagraphArray(3).getNumID());
+        assertEquals(document.getParagraphArray(2).getNumID(), document.getParagraphArray(3).getNumID());
+
+        assertEquals("日落：日落山花红四海", document.getTables().get(0).getRow(1).getCell(1).getText());
+        document.close();
     }
 
 }

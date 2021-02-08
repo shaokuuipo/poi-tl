@@ -17,10 +17,8 @@
 package com.deepoove.poi.render.processor;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
-import org.apache.poi.xwpf.usermodel.IRunBody;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.xmlbeans.XmlCursor;
@@ -37,7 +35,7 @@ import com.deepoove.poi.template.run.RunTemplate;
 import com.deepoove.poi.xwpf.BodyContainer;
 import com.deepoove.poi.xwpf.ParagraphContext;
 import com.deepoove.poi.xwpf.ParentContext;
-import com.deepoove.poi.xwpf.XWPFParagraphContext;
+import com.deepoove.poi.xwpf.RunBodyContext;
 import com.deepoove.poi.xwpf.XWPFParagraphWrapper;
 
 public class InlineIterableProcessor extends AbstractIterableProcessor {
@@ -54,7 +52,7 @@ public class InlineIterableProcessor extends AbstractIterableProcessor {
 
     @Override
     protected void handleNever(IterableTemplate iterableTemplate, BodyContainer bodyContainer) {
-        ParagraphContext parentContext = new XWPFParagraphContext(
+        RunBodyContext parentContext = new ParagraphContext(
                 new XWPFParagraphWrapper((XWPFParagraph) iterableTemplate.getStartRun().getParent()));
 
         Integer startRunPos = iterableTemplate.getStartMark().getRunPos();
@@ -69,17 +67,14 @@ public class InlineIterableProcessor extends AbstractIterableProcessor {
     protected void handleIterable(IterableTemplate iterableTemplate, BodyContainer bodyContainer, Iterable<?> compute) {
         RunTemplate start = iterableTemplate.getStartMark();
         RunTemplate end = iterableTemplate.getEndMark();
-        ParagraphContext parentContext = new XWPFParagraphContext(
+        RunBodyContext parentContext = new ParagraphContext(
                 new XWPFParagraphWrapper((XWPFParagraph) start.getRun().getParent()));
 
         Integer startRunPos = start.getRunPos();
         Integer endRunPos = end.getRunPos();
         IterableContext context = new IterableContext(startRunPos, endRunPos);
 
-        Iterator<?> iterator = compute.iterator();
-        while (iterator.hasNext()) {
-            next(iterableTemplate, parentContext, context, iterator.next());
-        }
+        foreach(iterableTemplate, parentContext, context, compute.iterator());
 
         // clear self iterable template
         for (int i = endRunPos - 1; i > startRunPos; i--) {
@@ -89,7 +84,7 @@ public class InlineIterableProcessor extends AbstractIterableProcessor {
 
     @Override
     public void next(IterableTemplate iterable, ParentContext parentContext, IterableContext context, Object model) {
-        ParagraphContext paragraphContext = (ParagraphContext) parentContext;
+        RunBodyContext paragraphContext = (RunBodyContext) parentContext;
         RunTemplate end = iterable.getEndMark();
         CTR endCtr = end.getRun().getCTR();
         int startPos = context.getStart();
@@ -99,21 +94,21 @@ public class InlineIterableProcessor extends AbstractIterableProcessor {
         int insertPostionCursor = end.getRunPos();
 
         // copy content
-        List<XWPFRun> runs = paragraphContext.getParagraph().getRuns();
+        List<XWPFRun> runs = paragraphContext.getRuns();
         List<XWPFRun> copies = new ArrayList<XWPFRun>();
         for (int i = startPos + 1; i < endPos; i++) {
             insertPostionCursor = end.getRunPos();
 
             XWPFRun xwpfRun = runs.get(i);
             XWPFRun insertNewRun = paragraphContext.insertNewRun(xwpfRun, insertPostionCursor);
-            XWPFRun replaceXwpfRun = paragraphContext.createRun(xwpfRun, (IRunBody) paragraphContext.getParagraph());
+            XWPFRun replaceXwpfRun = paragraphContext.createRun(xwpfRun, paragraphContext.getTarget());
             paragraphContext.setAndUpdateRun(replaceXwpfRun, insertNewRun, insertPostionCursor);
 
             XmlCursor newCursor = endCtr.newCursor();
             newCursor.toPrevSibling();
             XmlObject object = newCursor.getObject();
-            XWPFRun copy = paragraphContext.createRun(object, (IRunBody) paragraphContext.getParagraph());
-            DocPrSupport.updateDocPrId(copy);
+            XWPFRun copy = paragraphContext.createRun(object, paragraphContext.getTarget());
+            DrawingSupport.updateDocPrId(copy);
             copies.add(copy);
             paragraphContext.setAndUpdateRun(copy, replaceXwpfRun, insertPostionCursor);
         }

@@ -16,12 +16,12 @@
 package com.deepoove.poi.util;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.poi.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,10 +31,9 @@ public final class ByteUtils {
     private static Logger logger = LoggerFactory.getLogger(ByteUtils.class);
 
     /**
-     * 通过网络地址获取byte数组
+     * Get byte array of network url
      * 
      * @param urlPath
-     *            网络地址
      * @return
      */
     public static byte[] getUrlByteArray(String urlPath) {
@@ -47,23 +46,41 @@ public final class ByteUtils {
     }
 
     /**
-     * 获取文件byte数组
+     * Get byte array of file
      * 
      * @param res
-     *            文件
      * @return
      */
     public static byte[] getLocalByteArray(File res) {
         try {
-            return toByteArray(new FileInputStream(res));
-        } catch (FileNotFoundException e) {
-            logger.error("FileNotFound", e);
+            return Files.readAllBytes(res.toPath());
+        } catch (IOException e) {
+            logger.error("readAllBytes error", e);
         }
         return null;
     }
 
     /**
-     * 流转换成byte数组
+     * Get byte array of base64
+     * 
+     * @param base64
+     * @return
+     */
+    public static byte[] getBase64ByteArray(String base64) {
+        String encodingPrefix = "base64,";
+        if (base64.contains(encodingPrefix)) {
+            int contentStartIndex = base64.indexOf(encodingPrefix) + encodingPrefix.length();
+            base64 = base64.substring(contentStartIndex);
+        }
+        boolean isBase64 = Base64.isBase64(base64);
+        if (isBase64) {
+            return Base64.decodeBase64(base64);
+        }
+        return null;
+    }
+
+    /**
+     * Get byte array of stream
      * 
      * @param is
      * @return
@@ -74,24 +91,12 @@ public final class ByteUtils {
             return IOUtils.toByteArray(is);
         } catch (IOException e) {
             logger.error("toByteArray error", e);
-        }
-        finally {
-            try {
-                is.close();
-            } catch (IOException e) {
-                logger.error("close stream error", e);
-            }
+        } finally {
+            IOUtils.closeQuietly(is);
         }
         return null;
     }
 
-    /**
-     * 加载网络流
-     * 
-     * @param urlPath
-     * @return
-     * @throws IOException
-     */
     public static InputStream getUrlStream(String urlPath) throws IOException {
         URL url = new URL(urlPath);
         return url.openConnection().getInputStream();

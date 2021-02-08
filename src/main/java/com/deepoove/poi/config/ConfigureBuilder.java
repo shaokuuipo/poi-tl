@@ -15,20 +15,33 @@
  */
 package com.deepoove.poi.config;
 
-import org.apache.commons.lang3.tuple.Pair;
+import java.lang.reflect.Method;
+import java.util.Map;
 
-import com.deepoove.poi.config.Configure.ELMode;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.poi.xddf.usermodel.chart.ChartTypes;
+
 import com.deepoove.poi.config.Configure.ValidErrorHandler;
 import com.deepoove.poi.policy.RenderPolicy;
-import com.deepoove.poi.policy.ref.ReferenceRenderPolicy;
+import com.deepoove.poi.render.compute.DefaultELRenderDataCompute;
 import com.deepoove.poi.render.compute.RenderDataComputeFactory;
-import com.deepoove.poi.resolver.RunTemplateFactory;
+import com.deepoove.poi.render.compute.SpELRenderDataCompute;
+import com.deepoove.poi.resolver.ElementTemplateFactory;
+import com.deepoove.poi.template.MetaTemplate;
 import com.deepoove.poi.util.RegexUtils;
 
+/**
+ * Builder to build {@link Configure}
+ * 
+ * @author Sayi
+ *
+ */
 public class ConfigureBuilder {
     private Configure config;
+    private boolean usedSpringEL;
+    private boolean changeRegex;
 
-    public ConfigureBuilder() {
+    ConfigureBuilder() {
         config = new Configure();
     }
 
@@ -44,13 +57,28 @@ public class ConfigureBuilder {
     }
 
     public ConfigureBuilder buildGrammerRegex(String reg) {
+        changeRegex = true;
         config.grammerRegex = reg;
         return this;
     }
 
-    public ConfigureBuilder setElMode(ELMode mode) {
-        config.elMode = mode;
-        return this;
+    public ConfigureBuilder useSpringEL() {
+        return useSpringEL(true);
+    }
+
+    public ConfigureBuilder useSpringEL(boolean isStrict) {
+        usedSpringEL = true;
+        return setRenderDataComputeFactory(model -> new SpELRenderDataCompute(model, isStrict));
+    }
+
+    public ConfigureBuilder useSpringEL(Map<String, Method> spELFunction) {
+        usedSpringEL = true;
+        return setRenderDataComputeFactory(model -> new SpELRenderDataCompute(model, true, spELFunction));
+    }
+
+    public ConfigureBuilder useDefaultEL(boolean isStrict) {
+        usedSpringEL = false;
+        return setRenderDataComputeFactory(model -> new DefaultELRenderDataCompute(model, isStrict));
     }
 
     public ConfigureBuilder setValidErrorHandler(ValidErrorHandler handler) {
@@ -63,8 +91,8 @@ public class ConfigureBuilder {
         return this;
     }
 
-    public ConfigureBuilder setRunTemplateFactory(RunTemplateFactory<?> runTemplateFactory) {
-        config.runTemplateFactory = runTemplateFactory;
+    public ConfigureBuilder setElementTemplateFactory(ElementTemplateFactory elementTemplateFactory) {
+        config.elementTemplateFactory = elementTemplateFactory;
         return this;
     }
 
@@ -73,17 +101,13 @@ public class ConfigureBuilder {
         return this;
     }
 
-    /**
-     * @deprecated use {@link ConfigureBuilder#bind()} instead
-     */
-    @Deprecated
-    public ConfigureBuilder customPolicy(String tagName, RenderPolicy policy) {
-        config.customPolicy(tagName, policy);
+    public ConfigureBuilder addPlugin(Class<? extends MetaTemplate> clazz, RenderPolicy policy) {
+        config.plugin(clazz, policy);
         return this;
     }
 
-    public ConfigureBuilder referencePolicy(ReferenceRenderPolicy<?> policy) {
-        config.referencePolicy(policy);
+    public ConfigureBuilder addPlugin(ChartTypes chartType, RenderPolicy policy) {
+        config.plugin(chartType, policy);
         return this;
     }
 
@@ -93,7 +117,7 @@ public class ConfigureBuilder {
     }
 
     public Configure build() {
-        if (config.elMode == ELMode.SPEL_MODE) {
+        if (usedSpringEL && !changeRegex) {
             config.grammerRegex = RegexUtils.createGeneral(config.gramerPrefix, config.gramerSuffix);
         }
         return config;

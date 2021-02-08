@@ -17,7 +17,6 @@
 package com.deepoove.poi.render.processor;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.poi.xwpf.usermodel.BodyElementType;
@@ -91,10 +90,7 @@ public class IterableProcessor extends AbstractIterableProcessor {
         NumberingContinue numbringContinue = NumberingContinue.of(bodyContainer, startPos, endPos, iterableTemplate);
         IterableContext context = new IterableContext(startPos, endPos, numbringContinue);
 
-        Iterator<?> iterator = compute.iterator();
-        while (iterator.hasNext()) {
-            next(iterableTemplate, bodyContainer, context, iterator.next());
-        }
+        foreach(iterableTemplate, bodyContainer, context, compute.iterator());
 
         // clear self iterable template
         for (int i = endPos - 1; i > startPos; i--) {
@@ -132,7 +128,7 @@ public class IterableProcessor extends AbstractIterableProcessor {
                 XmlObject object = insertPostionCursor.getObject();
                 XWPFParagraph copy = new XWPFParagraph((CTP) object, bodyContainer.getTarget());
                 // update docpr
-                DocPrSupport.updateDocPrId(copy);
+                DrawingSupport.updateDocPrId(copy);
                 // update numbering
                 context.getNumberingContinue().updateNumbering((XWPFParagraph) iBodyElement, copy);
 
@@ -151,7 +147,7 @@ public class IterableProcessor extends AbstractIterableProcessor {
                 XmlObject object = insertPostionCursor.getObject();
 
                 XWPFTable copy = new XWPFTable((CTTbl) object, bodyContainer.getTarget());
-                DocPrSupport.updateDocPrId(copy);
+                DrawingSupport.updateDocPrId(copy);
                 copies.add(copy);
                 bodyContainer.updateBodyElements(insertNewTbl, copy);
                 bodyContainer.setTable(tablePos, copy);

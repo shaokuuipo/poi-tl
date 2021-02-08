@@ -7,7 +7,7 @@ import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 
 import com.deepoove.poi.data.RowRenderData;
 import com.deepoove.poi.policy.DynamicTableRenderPolicy;
-import com.deepoove.poi.policy.MiniTableRenderPolicy;
+import com.deepoove.poi.policy.TableRenderPolicy;
 import com.deepoove.poi.util.TableTools;
 
 /**
@@ -25,7 +25,7 @@ public class DetailTablePolicy extends DynamicTableRenderPolicy {
     int laborsStartRow = 5;
 
     @Override
-    public void render(XWPFTable table, Object data) {
+    public void render(XWPFTable table, Object data) throws Exception {
         if (null == data) return;
         DetailData detailData = (DetailData) data;
 
@@ -39,7 +39,7 @@ public class DetailTablePolicy extends DynamicTableRenderPolicy {
 
                 // 合并单元格
                 TableTools.mergeCellsHorizonal(table, laborsStartRow, 0, 3);
-                MiniTableRenderPolicy.Helper.renderRow(table, laborsStartRow, labors.get(i));
+                TableRenderPolicy.Helper.renderRow(table.getRow(laborsStartRow), labors.get(i));
             }
         }
 
@@ -49,7 +49,7 @@ public class DetailTablePolicy extends DynamicTableRenderPolicy {
             for (int i = 0; i < goods.size(); i++) {
                 XWPFTableRow insertNewTableRow = table.insertNewTableRow(goodsStartRow);
                 for (int j = 0; j < 7; j++) insertNewTableRow.createCell();
-                MiniTableRenderPolicy.Helper.renderRow(table, goodsStartRow, goods.get(i));
+                TableRenderPolicy.Helper.renderRow(table.getRow(goodsStartRow), goods.get(i));
             }
         }
     }

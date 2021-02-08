@@ -26,6 +26,9 @@ import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlObject;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRow;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTcPr;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTVMerge;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STMerge;
 
 import com.deepoove.poi.XWPFTemplate;
 import com.deepoove.poi.exception.RenderException;
@@ -39,20 +42,33 @@ import com.deepoove.poi.util.ReflectionUtils;
 import com.deepoove.poi.util.TableTools;
 
 /**
- * Hack for loop table
+ * Hack for loop table row
+ * 
+ * @author Sayi
+ *
  */
 public class HackLoopTableRenderPolicy implements RenderPolicy {
 
     private String prefix;
     private String suffix;
+    private boolean onSameLine;
 
     public HackLoopTableRenderPolicy() {
-        this("[", "]");
+        this(false);
+    }
+    
+    public HackLoopTableRenderPolicy(boolean onSameLine) {
+        this("[", "]", onSameLine);
     }
 
     public HackLoopTableRenderPolicy(String prefix, String suffix) {
+        this(prefix, suffix, false);
+    }
+
+    public HackLoopTableRenderPolicy(String prefix, String suffix, boolean onSameLine) {
         this.prefix = prefix;
         this.suffix = suffix;
+        this.onSameLine = onSameLine;
     }
 
     @Override
@@ -65,16 +81,17 @@ public class HackLoopTableRenderPolicy implements RenderPolicy {
                         "The template tag " + runTemplate.getSource() + " must be inside a table");
             }
             XWPFTableCell tagCell = (XWPFTableCell) ((XWPFParagraph) run.getParent()).getBody();
-            XWPFTableRow tagRow = tagCell.getTableRow();
             XWPFTable table = tagCell.getTableRow().getTable();
+            run.setText("", 0);
 
-            int templateRowIndex = getRowIndex(table, tagRow) + 1;
+            int templateRowIndex = getTemplateRowIndex(tagCell);
             if (null != data && data instanceof Iterable) {
                 Iterator<?> iterator = ((Iterable<?>) data).iterator();
                 XWPFTableRow templateRow = table.getRow(templateRowIndex);
                 int insertPosition = templateRowIndex;
 
-                TemplateResolver resolver = new TemplateResolver(template.getConfig().clone(prefix, suffix));
+                TemplateResolver resolver = new TemplateResolver(template.getConfig().copy(prefix, suffix));
+                boolean firstFlag = true;
                 while (iterator.hasNext()) {
                     insertPosition = templateRowIndex++;
                     XWPFTableRow nextRow = table.insertNewTableRow(insertPosition);
@@ -85,6 +102,20 @@ public class HackLoopTableRenderPolicy implements RenderPolicy {
                     newCursor.toPrevSibling();
                     XmlObject object = newCursor.getObject();
                     nextRow = new XWPFTableRow((CTRow) object, table);
+                    if (!firstFlag) {
+                        // update VMerge cells for non-first row
+                        List<XWPFTableCell> tableCells = nextRow.getTableCells();
+                        for (XWPFTableCell cell : tableCells) {
+                            CTTcPr tcPr = TableTools.getTcPr(cell);
+                            CTVMerge vMerge = tcPr.getVMerge();
+                            if (null == vMerge) continue;
+                            if (STMerge.RESTART == vMerge.getVal()) {
+                                vMerge.setVal(STMerge.CONTINUE);
+                            }
+                        }
+                    } else {
+                        firstFlag = false;
+                    }
                     setTableRow(table, nextRow, insertPosition);
 
                     RenderDataCompute dataCompute = template.getConfig().getRenderDataComputeFactory()
@@ -97,12 +128,19 @@ public class HackLoopTableRenderPolicy implements RenderPolicy {
                 }
             }
 
-            run.setText("", 0);
             table.removeRow(templateRowIndex);
-
+            afterloop(table, data);
         } catch (Exception e) {
             throw new RenderException("HackLoopTable for " + eleTemplate + "error: " + e.getMessage(), e);
         }
+    }
+
+    private int getTemplateRowIndex(XWPFTableCell tagCell) {
+        XWPFTableRow tagRow = tagCell.getTableRow();
+        return onSameLine ? getRowIndex(tagRow) : (getRowIndex(tagRow) + 1);
+    }
+
+    protected void afterloop(XWPFTable table, Object data) {
     }
 
     @SuppressWarnings("unchecked")
@@ -112,8 +150,8 @@ public class HackLoopTableRenderPolicy implements RenderPolicy {
         table.getCTTbl().setTrArray(pos, templateRow.getCtRow());
     }
 
-    private int getRowIndex(XWPFTable table, XWPFTableRow row) {
-        List<XWPFTableRow> rows = table.getRows();
+    private int getRowIndex(XWPFTableRow row) {
+        List<XWPFTableRow> rows = row.getTable().getRows();
         return rows.indexOf(row);
     }
 

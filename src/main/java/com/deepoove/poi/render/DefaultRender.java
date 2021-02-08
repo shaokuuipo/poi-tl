@@ -61,12 +61,11 @@ public class DefaultRender implements Render {
         try {
 
             watch.start();
-            renderReference(template);
             renderTemplate(template, renderDataCompute);
             renderInclude(template, renderDataCompute);
 
         } catch (Exception e) {
-            if (e instanceof RenderException) throw (RenderException)e;
+            if (e instanceof RenderException) throw (RenderException) e;
             throw new RenderException("Cannot render docx template, please check the Exception", e);
         } finally {
             watch.stop();
@@ -74,14 +73,10 @@ public class DefaultRender implements Render {
         LOGGER.info("Successfully Render template in {} millis", TimeUnit.NANOSECONDS.toMillis(watch.getNanoTime()));
     }
 
-    private void renderReference(XWPFTemplate template) {
-        template.getConfig().getReferencePolicies().forEach(policy -> policy.render(template));
-    }
-
     private void renderTemplate(XWPFTemplate template, RenderDataCompute renderDataCompute) {
         // log
         new LogProcessor().process(template.getElementTemplates());
-        
+
         // render
         DocumentProcessor documentRender = new DocumentProcessor(template, template.getResolver(), renderDataCompute);
         documentRender.process(template.getElementTemplates());
@@ -119,7 +114,6 @@ public class DefaultRender implements Render {
                         runTemplate.getSign(), ClassUtils.getShortClassName(policy.getClass()));
                 policy.render(runTemplate, renderDataCompute.compute(runTemplate.getTagName()), template);
 
-                // 没有最终合并，继续下一个合并
                 if (current == template.getXWPFDocument()) {
                     i++;
                 } else {
