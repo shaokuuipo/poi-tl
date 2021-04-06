@@ -135,4 +135,13 @@ public class HeaderFooterBodyContainer implements BodyContainer {
         return null;
     }
 
+    @Override
+    public int elementPageWidth(IBodyElement element) {
+        XWPFSection section = closelySectPr(element);
+        if (null == section) {
+            throw new IllegalAccessError("Unable to read the page where the element is located.");
+        }
+        return section.getPageContentWidth().intValue();
+    }
+
 }

@@ -26,13 +26,18 @@ import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 
 import com.deepoove.poi.data.PictureRenderData;
-import com.deepoove.poi.data.PictureRenderData.PictureAlign;
+import com.deepoove.poi.data.PictureType;
+import com.deepoove.poi.data.style.PictureStyle;
+import com.deepoove.poi.data.style.PictureStyle.PictureAlign;
 import com.deepoove.poi.exception.RenderException;
 import com.deepoove.poi.render.RenderContext;
 import com.deepoove.poi.util.BufferedImageUtils;
-import com.deepoove.poi.util.PageTools;
+import com.deepoove.poi.util.SVGConvertor;
 import com.deepoove.poi.util.UnitUtils;
+import com.deepoove.poi.xwpf.BodyContainer;
+import com.deepoove.poi.xwpf.BodyContainerFactory;
 import com.deepoove.poi.xwpf.WidthScalePattern;
+import com.deepoove.poi.xwpf.XWPFRunWrapper;
 
 /**
  * picture render
@@ -69,22 +74,29 @@ public class PictureRenderPolicy extends AbstractRenderPolicy<PictureRenderData>
 
     public static class Helper {
         public static void renderPicture(XWPFRun run, PictureRenderData picture) throws Exception {
-            if (null == picture.getImage()) {
+            byte[] imageBytes = picture.getImage();
+            if (null == imageBytes) {
                 throw new IllegalStateException("Can't get input data from picture!");
             }
-            PictureAlign align = picture.getAlign();
-            if (null != align && run.getParent() instanceof XWPFParagraph) {
-                ((XWPFParagraph) run.getParent()).setAlignment(ParagraphAlignment.valueOf(align.ordinal() + 1));
-            }
 
-            int width = picture.getWidth();
-            int height = picture.getHeight();
-            if (!isSetSize(picture)) {
-                BufferedImage original = BufferedImageUtils.readBufferedImage(picture.getImage());
+            PictureStyle style = picture.getPictureStyle();
+            if (null == style) style = new PictureStyle();
+            int width = style.getWidth();
+            int height = style.getHeight();
+
+            PictureType pictureType = picture.getPictureType();
+            if (pictureType == PictureType.SVG) {
+                imageBytes = SVGConvertor.toPNG(imageBytes, (float) width, (float) height);
+                pictureType = PictureType.PNG;
+            }
+            if (!isSetSize(style)) {
+                BufferedImage original = BufferedImageUtils.readBufferedImage(imageBytes);
                 width = original.getWidth();
                 height = original.getHeight();
-                if (picture.getScalePattern() == WidthScalePattern.FIT) {
-                    int pageWidth = UnitUtils.twips2Pixel(PageTools.pageWidth((IBodyElement) run.getParent()));
+                if (style.getScalePattern() == WidthScalePattern.FIT) {
+                    BodyContainer bodyContainer = BodyContainerFactory
+                            .getBodyContainer(((IBodyElement) run.getParent()).getBody());
+                    int pageWidth = UnitUtils.twips2Pixel(bodyContainer.elementPageWidth((IBodyElement) run.getParent()));
                     if (width > pageWidth) {
                         double ratio = pageWidth / (double) width;
                         width = pageWidth;
@@ -92,15 +104,20 @@ public class PictureRenderPolicy extends AbstractRenderPolicy<PictureRenderData>
                     }
                 }
             }
-            try (InputStream stream = new ByteArrayInputStream(picture.getImage())) {
-                run.addPicture(stream, picture.getPictureType().type(), "Generated", Units.pixelToEMU(width),
+            try (InputStream stream = new ByteArrayInputStream(imageBytes)) {
+                PictureAlign align = style.getAlign();
+                if (null != align && run.getParent() instanceof XWPFParagraph) {
+                    ((XWPFParagraph) run.getParent()).setAlignment(ParagraphAlignment.valueOf(align.ordinal() + 1));
+                }
+                XWPFRunWrapper wrapper = new XWPFRunWrapper(run, false);
+                wrapper.addPicture(stream, pictureType.type(), "Generated", Units.pixelToEMU(width),
                         Units.pixelToEMU(height));
             }
         }
 
-        private static boolean isSetSize(PictureRenderData picture) {
-            return (picture.getWidth() != 0 || picture.getHeight() != 0)
-                    && picture.getScalePattern() == WidthScalePattern.NONE;
+        private static boolean isSetSize(PictureStyle style) {
+            return (style.getWidth() != 0 || style.getHeight() != 0)
+                    && style.getScalePattern() == WidthScalePattern.NONE;
         }
     }
 }

@@ -19,7 +19,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.InputStream;
 
-import com.deepoove.poi.data.PictureRenderData.PictureAlign;
+import com.deepoove.poi.data.style.PictureStyle;
+import com.deepoove.poi.data.style.PictureStyle.PictureAlign;
 import com.deepoove.poi.util.BufferedImageUtils;
 import com.deepoove.poi.util.ByteUtils;
 import com.deepoove.poi.util.UnitUtils;
@@ -35,16 +36,24 @@ public class Pictures {
     private Pictures() {
     }
 
-    public static PictureBuilder ofLocal(String src) {
-        return ofBytes(ByteUtils.getLocalByteArray(new File(src)), PictureType.suggestFileType(src));
+    public static PictureBuilder ofLocal(String path) {
+        return ofBytes(ByteUtils.getLocalByteArray(new File(path)), PictureType.suggestFileType(path));
     }
 
     public static PictureBuilder ofUrl(String url, PictureType pictureType) {
         return ofBytes(ByteUtils.getUrlByteArray(url), pictureType);
     }
 
+    public static PictureBuilder ofUrl(String url) {
+        return ofBytes(ByteUtils.getUrlByteArray(url));
+    }
+
     public static PictureBuilder ofStream(InputStream inputStream, PictureType pictureType) {
         return ofBytes(ByteUtils.toByteArray(inputStream), pictureType);
+    }
+
+    public static PictureBuilder ofStream(InputStream inputStream) {
+        return ofBytes(ByteUtils.toByteArray(inputStream));
     }
 
     public static PictureBuilder ofBufferedImage(BufferedImage image, PictureType pictureType) {
@@ -57,6 +66,10 @@ public class Pictures {
 
     public static PictureBuilder ofBytes(byte[] bytes, PictureType pictureType) {
         return new PictureBuilder(pictureType, bytes);
+    }
+
+    public static PictureBuilder ofBytes(byte[] bytes) {
+        return new PictureBuilder(PictureType.suggestFileType(bytes), bytes);
     }
 
     /**
@@ -72,10 +85,20 @@ public class Pictures {
         }
 
         public PictureBuilder size(int width, int height) {
-            data.setWidth(width);
-            data.setHeight(height);
-            data.setScalePattern(WidthScalePattern.NONE);
+            PictureStyle style = getPictureStyle();
+            style.setWidth(width);
+            style.setHeight(height);
+            style.setScalePattern(WidthScalePattern.NONE);
             return this;
+        }
+
+        private PictureStyle getPictureStyle() {
+            PictureStyle style = data.getPictureStyle();
+            if (null == style) {
+                style = new PictureStyle();
+                data.setPictureStyle(style);
+            }
+            return style;
         }
 
         public PictureBuilder sizeInCm(double widthCm, double heightCm) {
@@ -83,7 +106,8 @@ public class Pictures {
         }
 
         public PictureBuilder fitSize() {
-            data.setScalePattern(WidthScalePattern.FIT);
+            PictureStyle style = getPictureStyle();
+            style.setScalePattern(WidthScalePattern.FIT);
             return this;
         }
 
@@ -93,17 +117,20 @@ public class Pictures {
         }
 
         public PictureBuilder left() {
-            data.setAlign(PictureAlign.LEFT);
+            PictureStyle style = getPictureStyle();
+            style.setAlign(PictureAlign.LEFT);
             return this;
         }
 
         public PictureBuilder center() {
-            data.setAlign(PictureAlign.CENTER);
+            PictureStyle style = getPictureStyle();
+            style.setAlign(PictureAlign.CENTER);
             return this;
         }
 
         public PictureBuilder right() {
-            data.setAlign(PictureAlign.RIGHT);
+            PictureStyle style = getPictureStyle();
+            style.setAlign(PictureAlign.RIGHT);
             return this;
         }
 
